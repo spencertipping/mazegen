@@ -59,7 +59,8 @@ until (grep defined, @result) {
 }
 
 if ($html) {
-  my $fontsize = 9 / $size;
+  my $fontsize = 8 / ($size + 1);
+  print "<body style='line-spacing:1;letter-spacing:1em'>\n";
   print "<span style='color:red;font-family:monospace;font-size:${fontsize}in'>" . "&nbsp;" x $startx . "V</span><br/>\n";
   for my $y (0..$size-1) {
     for my $x (0..$size-1) {
@@ -69,6 +70,7 @@ if ($html) {
     }
     print "<br/>\n";
   }
+  print "</body>\n";
 } else {
   print " " x $startx . "V\n";
   for my $y (0..$size-1) {
