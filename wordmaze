@@ -1,0 +1,80 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+our $html = 0;
+$html = shift @ARGV if $ARGV[0] eq "--html";
+
+our ($size, @words) = map lc, @ARGV;
+$size >= length or die "$_ is too long" for @words;
+
+sub x_of($) {$_[0] eq "E" ? 1 : $_[0] eq "W" ? -1 : 0}
+sub y_of($) {$_[0] eq "N" ? 1 : $_[0] eq "S" ? -1 : 0}
+
+sub fill_more_words {
+  my ($x, $y, $words_left, @letters) = @_;
+  my ($word, @new_words_left) = @$words_left;
+  my @dirs = sort {rand() <=> 0.5} qw/N E W S/;
+
+  outer:
+  for my $d (@dirs) {
+    my ($dx, $dy) = (x_of($d), y_of($d));
+
+    # Step 1: check bounds
+    my ($endx, $endy) = ($x + length($word)*$dx, $y + length($word)*$dy);
+    next if $endx >= $size || $endx < 0
+         || $endy >= $size || $endy < 0;
+
+    # Step 2: check for collisions
+    $letters[$x + $_*$dx + $size*($y + $_*$dy)] eq " " or next outer
+      for 1..length($word);
+
+    # Step 3: fill the word
+    my @new_letters = @letters;
+    $new_letters[$x + $dx*$_ + $size*($y + $dy*$_)] = substr $word, $_ - 1, 1
+      for 1..length($word);
+
+    # Step 4: progress
+    my @r = fill_words($endx, $endy, \@new_words_left, @new_letters);
+    return @r if @r;
+  }
+  return undef;
+}
+
+sub fill_with_randoms {map / / ? chr(97 + rand()*26) : $_, @_}
+
+sub fill_words {
+  my ($x, $y, $words_left, @letters) = @_;
+  return fill_more_words @_ if @$words_left;
+  $letters[$x + $y*$size] =~ y/a-z/A-Z/;
+  return fill_with_randoms @letters;
+}
+
+my $startx;
+my @result;
+
+until (grep defined, @result) {
+  $startx = int rand() * $size;
+  @result = fill_words $startx, -1, [@words], (' ') x $size**2;
+}
+
+if ($html) {
+  my $fontsize = 9 / $size;
+  print "<span style='color:red;font-family:monospace;font-size:${fontsize}in'>" . "&nbsp;" x $startx . "V</span><br/>\n";
+  for my $y (0..$size-1) {
+    for my $x (0..$size-1) {
+      $_ = $result[$x + $y*$size];
+      my $color = /[A-Z]/ ? "red" : "black";
+      print "<span style='color:$color;font-family:monospace;font-size:${fontsize}in'>$_</span>";
+    }
+    print "<br/>\n";
+  }
+} else {
+  print " " x $startx . "V\n";
+  for my $y (0..$size-1) {
+    for my $x (0..$size-1) {
+      print $result[$x + $y*$size];
+    }
+    print "\n";
+  }
+}
